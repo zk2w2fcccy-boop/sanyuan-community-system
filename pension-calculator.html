@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>居民养老金计算器｜三元社区</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f2f3f5;color:#1d2129;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+    .wrap{max-width:1120px;margin:0 auto;padding:28px 18px 48px}.head{margin-bottom:20px}.head h1{margin:0 0 6px;font-size:28px}.head p{margin:0;color:#86909c}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #e5e6eb;border-radius:10px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .card h2{font-size:17px;margin:0 0 18px}.field{margin-bottom:15px}.field label{display:block;font-size:14px;margin-bottom:7px;color:#4e5969}.field input,.field select{width:100%;height:42px;border:1px solid #c9cdd4;border-radius:6px;padding:0 12px;font-size:15px;background:#fff}.field input:focus,.field select:focus{outline:0;border-color:#165dff;box-shadow:0 0 0 2px rgba(22,93,255,.1)}
+    .hint{font-size:12px;color:#86909c;margin-top:5px;line-height:1.5}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.actions{display:flex;gap:10px;margin-top:4px}.btn{height:42px;border:0;border-radius:6px;padding:0 20px;font-size:14px;cursor:pointer}.primary{background:#165dff;color:#fff}.secondary{background:#f2f3f5;color:#4e5969}
+    .result{grid-column:1/-1}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.metric{background:#f7f8fa;border-radius:8px;padding:15px}.metric .label{font-size:13px;color:#86909c}.metric .value{font-size:25px;font-weight:650;margin-top:5px}.metric.main{background:#eaf2ff}.metric.main .value{color:#165dff}
+    table{width:100%;border-collapse:collapse;font-size:14px}td{padding:10px 4px;border-bottom:1px solid #f0f1f3}td:last-child{text-align:right;font-weight:600}.note{margin-top:16px;padding:12px 14px;background:#fff7e8;border-radius:7px;color:#6b4e00;font-size:13px;line-height:1.6}
+    .policy{grid-column:1/-1}.grades{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}.grade{padding:8px 4px;text-align:center;background:#f7f8fa;border-radius:5px;font-size:12px}.grade b{display:block;font-size:13px;margin-bottom:2px}
+    .footer{margin-top:14px;color:#86909c;font-size:12px;line-height:1.6}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}.result,.policy{grid-column:auto}.summary{grid-template-columns:1fr}.grades{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:1fr}.head h1{font-size:23px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>居民养老金计算器</h1>
+    <p>三元社区｜按上传图片中的安徽省城乡居民基本养老保险缴费档次及补贴政策设计</p>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>① 缴费信息</h2>
+      <div class="row">
+        <div class="field">
+          <label for="years">累计缴费年限（年）</label>
+          <input id="years" type="number" min="0" max="100" value="15" />
+          <div class="hint">满15年后，每多缴1年，按照片政策每月增加5元，最多增加50元。</div>
+        </div>
+        <div class="field">
+          <label for="grade">年度缴费档次</label>
+          <select id="grade"></select>
+          <div class="hint">2026年起增加9000元档次，共16个档次。</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="balance">当前个人账户余额（元，可选）</label>
+        <input id="balance" type="number" min="0" step="0.01" placeholder="如果有社保账户实际余额，优先填写此项" />
+        <div class="hint">填写实际账户余额时，将直接按“账户余额 ÷ 139”计算个人账户养老金，余额中可包含利息、政策补贴等。</div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="calculate()">计算养老金</button>
+        <button class="btn secondary" onclick="resetForm()">恢复默认</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>② 政策参数</h2>
+      <div class="row">
+        <div class="field">
+          <label for="basic">基础养老金（元/月）</label>
+          <input id="basic" type="number" min="0" step="0.01" value="205" />
+          <div class="hint">照片文字注明：2025年基础养老金为205元/月。以后政策调整可直接修改。</div>
+        </div>
+        <div class="field">
+          <label for="divider">个人账户养老金计发月数</label>
+          <input id="divider" type="number" min="1" step="1" value="139" />
+          <div class="hint">按照片公式：个人账户养老金＝个人账户总金额÷139。</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="bonus">缴费年限增加养老金（元/月）</label>
+        <input id="bonus" type="number" min="0" step="1" value="5" />
+        <div class="hint">仅计算15年以后增加部分，最多按10年计，即最高增加50元/月。</div>
+      </div>
+    </section>
+
+    <section class="card result">
+      <h2>计算结果</h2>
+      <div class="summary">
+        <div class="metric main"><div class="label">预计月养老金</div><div class="value" id="monthly">—</div></div>
+        <div class="metric"><div class="label">预计年养老金</div><div class="value" id="annual">—</div></div>
+        <div class="metric"><div class="label">个人账户养老金</div><div class="value" id="accountPension">—</div></div>
+      </div>
+      <table>
+        <tr><td>基础养老金</td><td id="rBasic">—</td></tr>
+        <tr><td>缴费年限增加部分</td><td id="rYears">—</td></tr>
+        <tr><td>估算个人缴费本金</td><td id="rPrincipal">—</td></tr>
+        <tr><td>估算政策补贴</td><td id="rSubsidy">—</td></tr>
+        <tr><td>用于计算的个人账户金额</td><td id="rBalance">—</td></tr>
+      </table>
+      <div class="note">提示：这是依据你提供的照片政策参数做的估算工具，不等同于社保经办机构最终核定结果。实际待遇还可能受到历史缴费档次、实际账户余额、利息、地方后续政策调整等因素影响。</div>
+    </section>
+
+    <section class="card policy">
+      <h2>照片政策参数｜2026年起缴费档次与补贴</h2>
+      <div class="grades" id="grades"></div>
+      <div class="footer">缴费补贴标准按照片：200元补40元、300元补50元、400元补60元、500元补70元、600元补80元、700元补90元、800元补100元、900元补110元、1000元补120元、1500元补150元、2000元及以上补200元；照片注明“补缴不享补贴”。</div>
+    </section>
+  </div>
+</div>
+
+<script>
+const grades = [
+  [200,40],[300,50],[400,60],[500,70],[600,80],[700,90],[800,100],[900,110],
+  [1000,120],[1500,150],[2000,200],[3000,200],[4000,200],[5000,200],[6000,200],[9000,200]
+];
+
+const fmt = n => Number(n || 0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' 元';
+const $ = id => document.getElementById(id);
+
+function init(){
+  $('grade').innerHTML = grades.map(([g,s]) => '<option value="'+g+'">'+g+'元档（补贴'+s+'元）</option>').join('');
+  $('grade').value = '3000';
+  renderGrades();
+  calculate();
+}
+function subsidyFor(g){
+  const item = grades.find(x => x[0] === Number(g));
+  return item ? item[1] : 0;
+}
+function calculate(){
+  const years = Math.max(0, Number($('years').value) || 0);
+  const grade = Number($('grade').value) || 0;
+  const basic = Math.max(0, Number($('basic').value) || 0);
+  const divider = Math.max(1, Number($('divider').value) || 139);
+  const bonusPerYear = Math.max(0, Number($('bonus').value) || 0);
+  const subsidy = subsidyFor(grade);
+  const extraYears = Math.min(Math.max(years - 15, 0), 10);
+  const yearBonus = extraYears * bonusPerYear;
+
+  const enteredBalance = $('balance').value.trim();
+  const estimatedPrincipal = grade * years;
+  const estimatedSubsidy = subsidy * years;
+  const accountBalance = enteredBalance === '' ? estimatedPrincipal + estimatedSubsidy : Math.max(0, Number(enteredBalance) || 0);
+  const accountPension = accountBalance / divider;
+  const monthly = basic + yearBonus + accountPension;
+
+  $('monthly').textContent = fmt(monthly);
+  $('annual').textContent = fmt(monthly * 12);
+  $('accountPension').textContent = fmt(accountPension);
+  $('rBasic').textContent = fmt(basic);
+  $('rYears').textContent = fmt(yearBonus);
+  $('rPrincipal').textContent = fmt(estimatedPrincipal);
+  $('rSubsidy').textContent = enteredBalance === '' ? fmt(estimatedSubsidy) : '—（使用实际账户余额）';
+  $('rBalance').textContent = fmt(accountBalance);
+}
+function resetForm(){
+  $('years').value = 15;
+  $('grade').value = 3000;
+  $('balance').value = '';
+  $('basic').value = 205;
+  $('divider').value = 139;
+  $('bonus').value = 5;
+  calculate();
+}
+function renderGrades(){
+  $('grades').innerHTML = grades.map(([g,s]) => '<div class="grade"><b>'+g+'元</b>补'+s+'元</div>').join('');
+}
+['years','grade','balance','basic','divider','bonus'].forEach(id => $(id).addEventListener('input',calculate));
+init();
+</script>
+</body>
+</html>
